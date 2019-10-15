@@ -147,7 +147,6 @@ function displayModal(userEmail) {
   userData
     .then(response => {
         state = {
-          ...state,
           response,
         };
          generateUsers();
