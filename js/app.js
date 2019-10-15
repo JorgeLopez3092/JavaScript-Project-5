@@ -1,6 +1,6 @@
 const body = document.getElementsByTagName('body')[0];
 const gallery = document.getElementById('gallery');
-const usersAPI = 'https://randomuser.me/api/?results=12';
+const usersAPI = 'https://randomuser.me/api/?results=12&nat=us';
 const modalContainer = document.createElement('div');
 const searchContainer = document.getElementsByClassName('search-container')[0];
 const cards = document.getElementsByClassName('card');
