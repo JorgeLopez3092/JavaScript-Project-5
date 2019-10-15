@@ -1,13 +1,22 @@
-const body = document.getElementsByTagName('body');
+const body = document.getElementsByTagName('body')[0];
 const gallery = document.getElementById('gallery');
 const usersAPI = 'https://randomuser.me/api/?results=12';
 const modalContainer = document.createElement('div');
+const searchContainer = document.getElementsByClassName('search-container')[0];
 const cards = document.getElementsByClassName('card');
 const userData = fetchData(usersAPI);
+//object to store info from JSON response object for reuseability
 let state = {
   response: undefined,
   selectedUser: undefined,
 };
+
+searchContainer.innerHTML = `
+  <form action="#" method="get">
+  <input type="search" id="search-input" class="search-input" placeholder="Search...">
+  <input type="submit" value="&#x1F50D;" id="serach-submit" class="search-submit" onclick="searchActivate()">
+  </form>
+`;
 
 modalContainer.classList.add('modal-container');
 modalContainer.innerHTML = `
@@ -25,16 +34,13 @@ modalContainer.innerHTML = `
     </div>
   </div>
   <div class="modal-btn-container">
-    <button type="button" id="modal-prev" class="modal-prev btn">Prev</button>
-    <button type="button" id="modal-next" class="modal-next btn">Next</button>
+    <button type="button" id="modal-prev" class="modal-prev btn" onClick="displayPrev()">Prev</button>
+    <button type="button" id="modal-next" class="modal-next btn" onClick="displayNext()">Next</button>
   </div>
 </div>
 `;
-body[0].appendChild(modalContainer);
+body.appendChild(modalContainer);
 modalContainer.style.display = 'none';
-function closeModal() {
-  modalContainer.style.display = 'none';
-}
 
 function fetchData(url) {
   return fetch(url)
@@ -43,20 +49,21 @@ function fetchData(url) {
       .catch(error => console.log('Looks like there was a problem', error));
 }
 
-async function getIndividual(data) {
-  const userData = await fetchData(data);
-  console.log(userData);
-  const users = userData.results.map(async user => {
-  });
+function checkStatus(response) {
+  if (response.ok) {
+    return Promise.resolve(response);
+  } else {
+    return Promise.reject(new Error(response.statusText));
+  }
 }
 
-function displayModal(username) {
-    const userIndex = state.response.results.findIndex(user => user.login.username === username);
+function closeModal() {
+  modalContainer.style.display = 'none';
+}
+
+function displayModal(userEmail) {
+    const userIndex = state.response.results.findIndex(user => user.email === userEmail);
     const user = state.response.results[userIndex];
-    console.log(user);
-    console.log(userIndex);
-    // const first = user.name.first;
-    // const last = user.name.last;
     const stateAbbrev = user.location.state.toUpperCase().slice(0, 2);
     const { name, email, location, phone, dob, picture } = user;
     const { large } = picture;
@@ -77,18 +84,53 @@ function displayModal(username) {
     modalContainer.style.display = '';
   }
 
-
-function checkStatus(response) {
-    if (response.ok) {
-      return Promise.resolve(response);
-    } else {
-      return Promise.reject(new Error(response.statusText));
+  function displayNext() {
+    const modalEmail = document.getElementById('modal-email').innerText;
+    const userIndex = state.response.results.findIndex(user => user.email === modalEmail);
+    let nextIndex;
+    //check to see if the index is already at the highest possible and set it back down to 0 if it is
+    if(userIndex < state.response.results.length - 1) {
+      nextIndex = userIndex + 1;
+    } else  {
+      nextIndex = 0;
     }
+    const nextEmail = state.response.results[nextIndex].email;
+    displayModal(nextEmail);    
   }
 
+  function displayPrev() {
+    const modalEmail = document.getElementById('modal-email').innerText;
+    const userIndex = state.response.results.findIndex(user => user.email === modalEmail);
+    let prevIndex;
+    //carousel check to see if the index is already at 0 and and set it back down to the lowest item on the list if it is
+    if(userIndex > 0) {
+      prevIndex = userIndex - 1;
+    } else  {
+      prevIndex = state.response.results.length - 1;
+    }
+    const prevEmail = state.response.results[prevIndex].email;
+    displayModal(prevEmail); 
+  }
+  
+  function searchActivate() {
+    const searchBar = document.getElementById('search-input');
+    let filter = searchBar.value.toUpperCase();
+    const users = document.getElementsByClassName('card-name');
+    const userCards = document.getElementsByClassName('card');
+    for (let i = 0; i < users.length; i++) {
+       const userNames = users[i].innerText.toUpperCase();
+       if (userNames.indexOf(filter) === -1) {
+        userCards[i].style.display = 'none';
+       } else {
+        userCards[i].style.display = "";
+       }
+    }
+ }
+
+//creates a new card for every result. carddiv on click ties a displayModal to every card with that cards email passed as an argument
   function generateUsers() {
     const users = state.response.results.map(user => `
-    <div class="card" onclick="displayModal('${user.login.username}')">
+    <div class="card" onclick="displayModal('${user.email}')">
         <div class="card-img-container">
             <img class="card-img" src="${user.picture.medium}" alt="profile picture">
         </div>
@@ -104,18 +146,9 @@ function checkStatus(response) {
 
   userData
     .then(response => {
-        console.log(response);
         state = {
           ...state,
           response,
         };
-        console.log(state)
          generateUsers();
     });
-
-  // userData
-  //   .then(async user => {
-  //     console.log(user);
-  //   });
-
-document.addEventListener('click', () => console.log());
